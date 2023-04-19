@@ -18,7 +18,7 @@ CONTRACT toyhouse : public contract {
     };
     typedef multi_index<name("toyshelf"), toy> toyshelf_table;
 
-    ACTION addtoy(int64_t id, string toyname, string toydescrip, uint64_t quantity){
+    ACTION addtoy(int128_t id, string toyname, string toydescrip, uint64_t quantity){
       check(has_auth(name("boss")), "You are not the boss");
       toyshelf_table _toyshelf(get_self(), get_self().value);
       // add the new toy if it does not exist
@@ -39,14 +39,16 @@ CONTRACT toyhouse : public contract {
       }
     }
 
-    ACTION removetoy( int64_t id, uint64_t quantity){
+    ACTION removetoy( uint64_t id, uint64_t quantity){
       require_auth(name("boss"));
       toyshelf_table _toyshelf(get_self(), get_self().value);
       //find toy
       auto itr = _toyshelf.find(id);
       //if does not exists, error
+      //print("itr=", itr);
       check(itr != _toyshelf.end(),"toy with given id not found");
-      print("itr=", itr, "itr->quantity=", itr->quantity);
+      //print("itr=", itr, "itr->quantity=", itr->quantity);
+      
       if((itr->quantity - quantity) == 0){
         //if resulting quantity is 0, delete toy row
         _toyshelf.erase(itr);
@@ -54,12 +56,18 @@ CONTRACT toyhouse : public contract {
       }
       else{
         //if resulting quantity is <0, error
-        check((itr->quantity - quantity) > 0, "You are trying to have negative toys");
-        //substract quantity
-        _toyshelf.modify(itr, get_self(), [&](auto& row_to_modify){
-          row_to_modify.quantity -= quantity;
-        });
+        //check( (itr->quantity - quantity) > 0, "You are trying to have negative toys");
+        if(itr->quantity < quantity){
+          print("You are trying to have negative toys");
+        }
+        else{
+          //substract quantity
+          _toyshelf.modify(itr, get_self(), [&](auto& row_to_modify){
+            row_to_modify.quantity -= quantity;
+          });
+        }
       }
+      
     }
 
     private:

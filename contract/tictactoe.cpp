@@ -25,6 +25,11 @@ CONTRACT tictactoe : public contract {
     ACTION create( name &challenger, name &host ){
       require_auth(host);
 
+      check(host != challenger, "Host and challenger cannot be the same player.");
+      check(host != get_self(), "Host cannot be the contract account.");
+      check(challenger != get_self(), "Challenger cannot be the contract account.");
+
+
       games existing_games(get_self(), get_self().value);
       auto game_iterator = existing_games.find(host.value);
 
@@ -36,20 +41,14 @@ CONTRACT tictactoe : public contract {
       });
     }
 
-    ACTION findgames(name &challenger){
-      games games_by_challenger(get_self(), get_self().value);
-      auto game_iterator = games_by_challenger.lower_bound(challenger.value);
-      auto game_iterator_term = games_by_challenger.upper_bound(challenger.value);
-      while (game_iterator != game_iterator_term){
-        if(game_iterator->challenger == challenger){
-          print("Game between ",game_iterator->host, " and ", game_iterator->challenger, "\n");
-        }
-        else{
-          print("xxx = ", game_iterator->challenger);
-        }
-        ++game_iterator;
-      }
+  ACTION findgames(name challenger) {
+    games games_by_challenger(get_self(), get_self().value);
+    auto game_iterator = games_by_challenger.lower_bound(challenger.value);
+    while (game_iterator != games_by_challenger.end() && game_iterator->challenger == challenger) {
+      print("Game between ", game_iterator->host, " and ", game_iterator->challenger, "\n");
+      ++game_iterator;
     }
+  }
 
     ACTION close(name challenger, name host){
       require_auth(host);
